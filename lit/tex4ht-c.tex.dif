@@ -1,0 +1,366 @@
+diff -r 09d75947f4a5 lit/tex4ht-c.tex
+--- a/lit/tex4ht-c.tex	Tue Aug 29 13:45:07 2017 +0300
++++ b/lit/tex4ht-c.tex	Thu Oct 19 18:26:20 2017 +0300
+@@ -1513,14 +1513,15 @@
+ \<trace context\><<<
+ {
+   char trace = *(p+2);
+-  if (trace == 'A' || trace == 'e') { `<context for warn and errs`> }
+-  if (trace == 'A' || trace == 'f') { `<dump htf files`> }
+-  if (trace == 'A' || trace == 'F') { `<trace htf search`> }
+-  if (trace == 'A' || trace == 's') { `<trace specials in dvi`> }
+-  if (trace == 'A' || trace == 'g') { `<cmd line trace groups`> }
+-  if (trace == 'A' || trace == 'v') { `<dump env file`> }
+-  if (trace == 'A' || trace == 'V') { `<trace env search`> }
+-  else { bad_arg; }
++  BOOL unkn_opt = TRUE;
++  if (trace == 'A' || trace == 'e') { `<context for warn and errs`> unkn_opt = FALSE; }
++  if (trace == 'A' || trace == 'f') { `<dump htf files`> unkn_opt = FALSE; }
++  if (trace == 'A' || trace == 'F') { `<trace htf search`> unkn_opt = FALSE; }
++  if (trace == 'A' || trace == 's') { `<trace specials in dvi`> unkn_opt = FALSE; }
++  if (trace == 'A' || trace == 'g') { `<cmd line trace groups`> unkn_opt = FALSE; }
++  if (trace == 'A' || trace == 'v') { `<dump env file`> unkn_opt = FALSE; }
++  if (trace == 'A' || trace == 'V') { `<trace env search`> unkn_opt = FALSE; }
++  if (unkn_opt) { bad_arg; }
+ }
+ >>>
+ 
+@@ -2822,7 +2823,7 @@
+ \<trace h spaces\><<<
+ if( trace_dvi_H && !ch_map_flag ){
+    if( *trace_dvi_del_H != '\0' ){
+-      (IGNORED) fprintf(cur_o_file, "%s%d", trace_dvi_del_H, (int) dx);
++      (IGNORED) fprintf(cur_o_file, "%s%.0f", trace_dvi_del_H, (double) dx);
+    }
+    (IGNORED) fprintf(cur_o_file, "%s", end_trace_dvi_del_H);
+ }
+@@ -2844,8 +2845,8 @@
+ \<trace x rules\><<<
+ if( trace_dvi_R && !ch_map_flag ){
+    if( *trace_dvi_del_R != '\0' ){   
+-      (IGNORED) fprintf(cur_o_file, "%s%d %d",
+-         trace_dvi_del_R, (int) x_val, (int) y_val);
++      (IGNORED) fprintf(cur_o_file, "%s%.0f %.0f",
++         trace_dvi_del_R, (double) x_val, (double) y_val);
+    }
+    (IGNORED) fprintf(cur_o_file, "%s", end_trace_dvi_del_R);
+ }
+@@ -2855,8 +2856,8 @@
+ \<end trace x rules\><<<
+ if( trace_dvi_R && !ch_map_flag ){
+    if( *trace_dvi_del_r != '\0' ){   
+-      (IGNORED) fprintf(cur_o_file, "%s%d %d",
+-         trace_dvi_del_R, (int) right, (int) up);
++      (IGNORED) fprintf(cur_o_file, "%s%.0f %.0f",
++         trace_dvi_del_R, (double) right, (double) up);
+    }
+    (IGNORED) fprintf(cur_o_file, "%s", end_trace_dvi_del_r);
+ }
+@@ -2957,7 +2958,7 @@
+ \`'max_x_val'. 
+ 
+ \<vars\><<<
+-static long int x_val = 0, max_x_val = -10000,
++static long long x_val = 0, max_x_val = -10000,
+      max_y_val = 0, prev_y_val = 0;
+ >>>
+ 
+@@ -2992,7 +2993,7 @@
+ 
+ \<functions\><<<
+ static void try_new_line(MYVOID)
+-{        long int  v;
++{        long long  v;
+          double    dy;
+    dy =  (cur_fnt == -1)? 0.0 : (`<sign of ex`> * `<size of ex`>) ;
+    v = y_val - prev_y_val;      
+@@ -3083,7 +3084,9 @@
+ `[ 
+ static INTEGER move_x( d ) 
+       register INTEGER  d
+-;{    register long     i, dx;
++;{    register long     i;
++      long long dx;
++      double sp;
+    x_val += d;
+    if( (x_val > max_x_val) && x_val ){
+      if( max_x_val == -10000) max_x_val = x_val - d;  
+@@ -3127,7 +3130,9 @@
+ 
+ \<space for llap\><<<
+ if( !ignore_spaces ){
+-   i =  (INTEGER) ( (double) (dx = d) / word_sp + 0.5 );
++   i = 0;
++   if (word_sp > 0.0001)
++      i =  (INTEGER) ( (double) (dx = d) / word_sp + 0.5 );
+    if( i<0 ) i=0;
+    if( !i ) i = dx>99999L;
+    if( i ){ put_char(' '); }
+@@ -3171,7 +3176,7 @@
+ 
+ \<vars\><<<
+ static INTEGER  dy_1 = 0, dy_2 = 0;
+-static long int y_val = 0;
++static long long y_val = 0;
+ >>>
+ 
+ \<header functions\><<<
+@@ -3235,8 +3240,11 @@
+ 
+ 
+ \<insert space\><<<
+-i =  (INTEGER) (  (double) (dx = x_val - max_x_val) 
+-            /         (text_on? word_sp : margin_sp)
++i = 0;
++sp = (text_on? word_sp : margin_sp);
++if (sp > 0.0001)
++    i =  (INTEGER) (  (double) (dx = x_val - max_x_val) 
++            /         sp
+             +         0.5 );
+ `<try word space if i=0`>
+ if( i<0 ) i=0;
+@@ -3251,7 +3259,8 @@
+ 
+ \<try word space if i=0\><<<
+ if( i==0 ){
+-   i =  (INTEGER) (  (double) dx 
++   if (word_sp > 0.0001)
++      i =  (INTEGER) (  (double) dx 
+             /         word_sp 
+             +         0.5 );
+ }
+@@ -3481,12 +3490,16 @@
+ 
+ \<check alternative space\><<<
+          double word_sp;
++         double sp;
+ cr_fnt = ch - `<font 0`>;
+ cr_fnt = search_font_tbl( cr_fnt );
+ word_sp = design_size_to_pt( font_tbl[cr_fnt].word_sp )
+              * (double) font_tbl[cr_fnt].scale;
+-i =  (INTEGER) (  (double) dx
+-            /         (text_on? word_sp : margin_sp)
++i = 0;
++sp = (text_on? word_sp : margin_sp);
++if (sp > 0.0001)
++    i =  (INTEGER) (  (double) dx
++            /         sp
+             +         0.5 );
+ `<try word space if i=0`>
+ if( i>0 ){ i =1; }
+@@ -3653,9 +3666,10 @@
+ `[ 
+ static  void rule_x( tag ) 
+       BOOL  tag
+-;{    long i, right, up;
+-   up = (INTEGER) get_int(4);                       
+-   right = (INTEGER) get_int(4);
++;{    long i;
++      long long right, up;
++   up = get_int(4);                       
++   right = get_int(4);
+    if( ch_map_flag ){ `<ruler into ch map`> }
+    else if( pos_dvi ){ 
+       `<pos dvi x rule`> 
+@@ -3706,10 +3720,14 @@
+           || ( !text_on && !ignore_chs )
+         )
+ ){ 
++   double sp;
+    if( (max_x_val == -10000) || ((x_val + right) <= max_x_val) )
+    {  max_x_val = x_val;  }        
+-   i =  (INTEGER) (  (double) (x_val + right - max_x_val) 
+-                   /         (text_on? word_sp : margin_sp)
++   i = 0;
++   sp = (text_on? word_sp : margin_sp);
++   if (sp > 0.0001)
++      i =  (INTEGER) (  (double) (x_val + right - max_x_val) 
++                   /         sp
+                    +         0.5 );
+    `<try word size if i=0`>
+    if( i && !text_on )  try_new_line();
+@@ -3727,7 +3745,8 @@
+ 
+ \<try word size if i=0\><<<
+ if( i==0 ){
+-   i =  (INTEGER) (  (double) (x_val + right - max_x_val) 
++   if (word_sp > 0.0001)
++      i =  (INTEGER) (  (double) (x_val + right - max_x_val) 
+                    /         word_sp
+                    +         0.5 );
+ }
+@@ -5242,7 +5261,7 @@
+ 
+ 
+ \<ruler into ch map\><<<
+-   long int  sv_x_val, sv_y_val, sv_right, sv;
++   long long  sv_x_val, sv_y_val, sv_right, sv;
+    int  ch;
+ sv_x_val = x_val;   
+ sv_y_val = y_val;
+@@ -5767,8 +5786,8 @@
+ visible_cnt = FALSE; 
+ bop_addr = advance_idv_page( bop_addr, cur_font );
+ stack_depth = 0;
+-set_loc( `<mv hor 1-byte`>, x_val );
+-set_loc( `<mv ver 1-byte`>, y_val );
++set_loc( `<mv hor 1-byte`>, (long int)x_val );
++set_loc( `<mv ver 1-byte`>, (long int)y_val );
+ >>>
+ 
+ 
+@@ -5801,9 +5820,9 @@
+    stack_depth++;
+    cond_idv_char( ch );   
+    break; }
+-case `<retrieve loc op`>: {      INTEGER cur_x, cur_y;
++case `<retrieve loc op`>: {      long long cur_x, cur_y;
+    stack_depth--; 
+-   cur_x = (INTEGER) x_val;  cur_y = (INTEGER) y_val;  pop_stack();
++   cur_x = x_val;  cur_y = y_val;  pop_stack();
+    if( dvi_flag ){
+       if( stack_depth<0 ){ warn_i_int( 24,  page_n );
+                            `<push curr state`>     }
+@@ -5854,7 +5873,7 @@
+ case `<def 3 byte font`>: 
+ case `<def 2 byte font`>: 
+ case `<def 1 byte font`>: {  idv_char( ch );             file_n++;
+-  for( i=14; i; i-- ){  ch = get_char(); idv_char( ch ); file_n++; }
++  for( i=14 + ch - 243; i; i-- ){  ch = get_char(); idv_char( ch ); file_n++; }
+   i = ch;  i += ch = get_char();  idv_char( ch );        file_n++;
+   while( i-- ){ idv_copy(); }
+   break;  }
+@@ -6666,7 +6685,7 @@
+ 
+ \<types\><<<
+ struct stack_entry{
+-  long  int x_val, y_val;
++  long long x_val, y_val;
+   INTEGER dx_1, dx_2, dy_1, dy_2;
+   BOOL text_on;
+   BOOL `<BOOl stack accented`>;
+@@ -7552,7 +7571,7 @@
+ \<send back over token / group\><<<
+               struct send_back_entry *p, *q, *t=0;
+ if( back_id_off ){
+-   while( i-- ){ (IGNORED) get_char();  }
++   while( --i ){ (IGNORED) get_char();  } // there are left i - 1 chars
+ } else {
+    p =  m_alloc(struct send_back_entry,1);
+    p->send = get_str( (int)( i - 1 ));
+@@ -8190,7 +8209,7 @@
+ 
+ 
+ \<pos dvi ch\><<< 
+-if( pos_dvi ){       long int d;
++if( pos_dvi ){       long long d;
+   if( *pos_text ){
+     `<open output file`>
+     (IGNORED) fprintf(cur_o_file, pos_text,
+@@ -8347,7 +8366,7 @@
+ 
+ 
+ \<pos dvi x rule\><<<
+-         long int d;
++         long long d;
+ if( (up > 0) && (right > 0) ){
+    if(  *pos_line ){
+                       double from_x, from_y;
+@@ -8442,7 +8461,7 @@
+ static U_CHAR   *pos_body,     * pos_text,     * pos_line, 
+        *end_pos_body, * end_pos_text;
+ static double   pos_x_A, pos_x_B, pos_y_C, pos_y_D, pos_y_E;
+-static long int base_pos_x, base_pos_y, min_pos_x, 
++static long long base_pos_x, base_pos_y, min_pos_x, 
+          max_pos_x, min_pos_y, max_pos_y;
+ static short rect_pos;
+ >>>
+@@ -8670,6 +8689,9 @@
+                  (size_t) ((font_tbl_size+1)
+                            * sizeof(struct font_entry)))
+             : m_alloc(struct font_entry, 1);
++
++   memset(&new_font, 0, sizeof(struct font_entry));
++
+    if(       (version_id == `<version xdv`>) 
+          &&  (ch == `<xdv-native-font-def op`>) 
+    ){
+@@ -9295,7 +9317,7 @@
+ 
+ \<first definition of font?\><<<
+ {        int i;
+-   for( i=font_tbl_size-1; i>0;  i-- )
++   for( i=font_tbl_size-1; i >= 0;  i-- )
+      if( new_font.num == font_tbl[i].num )  warn_i(10);   }
+ >>>
+ 
+@@ -10054,9 +10076,12 @@
+   while( 1 ){                         BOOL flag;
+      `<font looping test`>
+      flag = TRUE;
+-     for( ; font_name_n; font_name_n-- ){  FILE* file;
++     for( ; font_name_n >= 0; font_name_n-- ){  FILE* file;
+                                            int   char_f, char_l;
+        new_font_name[font_name_n] = '\0';
++       if (font_name_n == 0)
++            break;
++
+        `<file = .htf file`>
+        if( file != NULL){
+                                            INTEGER x_char_l;
+@@ -11878,9 +11903,12 @@
+      int css_name_n = (int) strlen((char *)  new_font.name );
+      char * css_file_name = m_alloc(char, css_name_n + 1);
+      (IGNORED) strcpy((char *) css_file_name, (char *) new_font.name);
+-     for( ; css_name_n; css_name_n-- ){
++     for( ; css_name_n >= 0; css_name_n-- ){
+                                                FILE* file;
+        css_file_name[css_name_n] = '\0';
++       if (css_name_n == 0)
++            break;
++
+        `<file = .css file`>
+      }
+      free((void *) css_file_name); 
+@@ -12250,7 +12278,7 @@
+ {  `<accented = true`>  stack[stack_n-1].accented = TRUE; }
+ needs_accent_sym = FALSE; 
+ width = (INTEGER)( `<(double) char_width( ch )`> );
+-if( needs_end_accent ){  needs_end_accent = x_val + 9 * width / 10; }
++if( needs_end_accent ){  needs_end_accent = (x_val + 9 * width / 10 != 0); }
+ in_accenting = FALSE;
+ >>>
+ 
+@@ -13174,7 +13202,7 @@
+ 
+ \<"s/tex4ht.env"\><<<
+ #if defined(__DJGPP__)
+-  is_forward_slash(HOME_DIR)?  "%s/tex4ht.env" :  "%s\\tex4ht.env"
++  (HOME_DIR && !is_forward_slash(HOME_DIR))?  "%s\\tex4ht.env" : "%s/tex4ht.env"
+ #else
+   "%s/tex4ht.env"
+ #endif
+@@ -15389,18 +15417,20 @@
+ ;{                                         U_CHAR  *p;
+    p = m_alloc(char, (int) strlen( dir )            +
+                      (base? (int) strlen( base ):0) +
+-                     (int) strlen((char *)  HOME_DIR  )      + 1 );
++                     (HOME_DIR? (int) strlen((char *)  HOME_DIR  ) : 0)      + 1 );
+    *p = '\0';    
+    if( (*(dir+1) == '~') && base ){  
+      if( *base == '~' ){  
+-       (IGNORED) strct(p, HOME_DIR);   
++       if (HOME_DIR)
++            (IGNORED) strct(p, HOME_DIR);   
+        (IGNORED) strct(p, base+1);   
+      } else {
+        (IGNORED) strct(p, base);   
+      } 
+      (IGNORED) strct(p, dir+2);   
+    } else {
+-     (IGNORED) strct(p, HOME_DIR);   
++     if (HOME_DIR)
++            (IGNORED) strct(p, HOME_DIR);   
+      (IGNORED) strct(p, dir+1);   
+    }
+    return p;

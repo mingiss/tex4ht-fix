@@ -1,0 +1,379 @@
+diff -r 09d75947f4a5 src/tex4ht.c
+--- a/src/tex4ht.c	Tue Aug 29 13:45:07 2017 +0300
++++ b/src/tex4ht.c	Thu Oct 19 18:34:50 2017 +0300
+@@ -518,7 +518,7 @@
+ 
+ 
+ struct stack_entry{
+-  long  int x_val, y_val;
++  long long x_val, y_val;
+   INTEGER dx_1, dx_2, dy_1, dy_2;
+   BOOL text_on;
+   BOOL 
+@@ -735,7 +735,7 @@
+ static int push_depth=0, push_id=0, push_st[256];
+ 
+ 
+-static long int x_val = 0, max_x_val = -10000,
++static long long x_val = 0, max_x_val = -10000,
+      max_y_val = 0, prev_y_val = 0;
+ 
+ 
+@@ -743,7 +743,7 @@
+ 
+ 
+ static INTEGER  dy_1 = 0, dy_2 = 0;
+-static long int y_val = 0;
++static long long y_val = 0;
+ 
+ 
+ static U_CHAR *eoln_str = (char *)0;
+@@ -859,7 +859,7 @@
+ static U_CHAR   *pos_body,     * pos_text,     * pos_line,
+        *end_pos_body, * end_pos_text;
+ static double   pos_x_A, pos_x_B, pos_y_C, pos_y_D, pos_y_E;
+-static long int base_pos_x, base_pos_y, min_pos_x,
++static long long base_pos_x, base_pos_y, min_pos_x,
+          max_pos_x, min_pos_y, max_pos_y;
+ static short rect_pos;
+ 
+@@ -1599,7 +1599,7 @@
+ 
+ 
+ static void try_new_line(MYVOID)
+-{        long int  v;
++{        long long  v;
+          double    dy;
+    dy =  (cur_fnt == -1)? 0.0 : (
+ (
+@@ -1701,17 +1701,23 @@
+ ;
+ #undef SEP
+ #endif
+-{    register long     i, dx;
++{    register long     i;
++      long long dx;
++      double sp;
+    x_val += d;
+    if( (x_val > max_x_val) && x_val ){
+      if( max_x_val == -10000) max_x_val = x_val - d;
+      
+-i =  (INTEGER) (  (double) (dx = x_val - max_x_val)
+-            /         (text_on? word_sp : margin_sp)
++i = 0;
++sp = (text_on? word_sp : margin_sp);
++if (sp > 0.0001)
++    i =  (INTEGER) (  (double) (dx = x_val - max_x_val)
++            /         sp
+             +         0.5 );
+ 
+ if( i==0 ){
+-   i =  (INTEGER) (  (double) dx
++   if (word_sp > 0.0001)
++      i =  (INTEGER) (  (double) dx
+             /         word_sp
+             +         0.5 );
+ }
+@@ -1764,18 +1770,23 @@
+         } else {
+            
+          double word_sp;
++         double sp;
+ cr_fnt = ch - 
+ 171  
+ ;
+ cr_fnt = search_font_tbl( cr_fnt );
+ word_sp = design_size_to_pt( font_tbl[cr_fnt].word_sp )
+              * (double) font_tbl[cr_fnt].scale;
+-i =  (INTEGER) (  (double) dx
+-            /         (text_on? word_sp : margin_sp)
++i = 0;
++sp = (text_on? word_sp : margin_sp);
++if (sp > 0.0001)
++    i =  (INTEGER) (  (double) dx
++            /         sp
+             +         0.5 );
+ 
+ if( i==0 ){
+-   i =  (INTEGER) (  (double) dx
++   if (word_sp > 0.0001)
++      i =  (INTEGER) (  (double) dx
+             /         word_sp
+             +         0.5 );
+ }
+@@ -1793,7 +1804,7 @@
+ if( i ){ 
+ if( trace_dvi_H && !ch_map_flag ){
+    if( *trace_dvi_del_H != '\0' ){
+-      (IGNORED) fprintf(cur_o_file, "%s%d", trace_dvi_del_H, (int) dx);
++      (IGNORED) fprintf(cur_o_file, "%s%.0f", trace_dvi_del_H, (double) dx);
+    }
+    (IGNORED) fprintf(cur_o_file, "%s", end_trace_dvi_del_H);
+ }
+@@ -1830,7 +1841,9 @@
+    } else    if( d && text_on  && (x_val != max_x_val) ){
+       
+ if( !ignore_spaces ){
+-   i =  (INTEGER) ( (double) (dx = d) / word_sp + 0.5 );
++   i = 0;
++   if (word_sp > 0.0001)
++      i =  (INTEGER) ( (double) (dx = d) / word_sp + 0.5 );
+    if( i<0 ) i=0;
+    if( !i ) i = dx>99999L;
+    if( i ){ put_char(' '); }
+@@ -1884,11 +1897,12 @@
+ ;
+ #undef SEP
+ #endif
+-{    long i, right, up;
+-   up = (INTEGER) get_int(4);
+-   right = (INTEGER) get_int(4);
++{    long i;
++      long long right, up;
++   up = get_int(4);
++   right = get_int(4);
+    if( ch_map_flag ){ 
+-   long int  sv_x_val, sv_y_val, sv_right, sv;
++   long long  sv_x_val, sv_y_val, sv_right, sv;
+    int  ch;
+ sv_x_val = x_val;
+ sv_y_val = y_val;
+@@ -1919,7 +1933,7 @@
+  }
+    else if( pos_dvi ){
+       
+-         long int d;
++         long long d;
+ if( (up > 0) && (right > 0) ){
+    if(  *pos_line ){
+                       double from_x, from_y;
+@@ -1966,14 +1980,19 @@
+           || ( !text_on && !ignore_chs )
+         )
+ ){
++   double sp;
+    if( (max_x_val == -10000) || ((x_val + right) <= max_x_val) )
+    {  max_x_val = x_val;  }
+-   i =  (INTEGER) (  (double) (x_val + right - max_x_val)
+-                   /         (text_on? word_sp : margin_sp)
++   i = 0;
++   sp = (text_on? word_sp : margin_sp);
++   if (sp > 0.0001)
++      i =  (INTEGER) (  (double) (x_val + right - max_x_val)
++                   /         sp
+                    +         0.5 );
+    
+ if( i==0 ){
+-   i =  (INTEGER) (  (double) (x_val + right - max_x_val)
++   if (word_sp > 0.0001)
++      i =  (INTEGER) (  (double) (x_val + right - max_x_val)
+                    /         word_sp
+                    +         0.5 );
+ }
+@@ -1983,8 +2002,8 @@
+    
+ if( trace_dvi_R && !ch_map_flag ){
+    if( *trace_dvi_del_R != '\0' ){
+-      (IGNORED) fprintf(cur_o_file, "%s%d %d",
+-         trace_dvi_del_R, (int) x_val, (int) y_val);
++      (IGNORED) fprintf(cur_o_file, "%s%.0f %.0f",
++         trace_dvi_del_R, (double) x_val, (double) y_val);
+    }
+    (IGNORED) fprintf(cur_o_file, "%s", end_trace_dvi_del_R);
+ }
+@@ -1999,8 +2018,8 @@
+    
+ if( trace_dvi_R && !ch_map_flag ){
+    if( *trace_dvi_del_r != '\0' ){
+-      (IGNORED) fprintf(cur_o_file, "%s%d %d",
+-         trace_dvi_del_R, (int) right, (int) up);
++      (IGNORED) fprintf(cur_o_file, "%s%.0f %.0f",
++         trace_dvi_del_R, (double) right, (double) up);
+    }
+    (IGNORED) fprintf(cur_o_file, "%s", end_trace_dvi_del_r);
+ }
+@@ -2016,8 +2035,8 @@
+ 
+ if( trace_dvi_R && !ch_map_flag ){
+    if( *trace_dvi_del_R != '\0' ){
+-      (IGNORED) fprintf(cur_o_file, "%s%d %d",
+-         trace_dvi_del_R, (int) x_val, (int) y_val);
++      (IGNORED) fprintf(cur_o_file, "%s%.0f %.0f",
++         trace_dvi_del_R, (double) x_val, (double) y_val);
+    }
+    (IGNORED) fprintf(cur_o_file, "%s", end_trace_dvi_del_R);
+ }
+@@ -2026,8 +2045,8 @@
+ 
+ if( trace_dvi_R && !ch_map_flag ){
+    if( *trace_dvi_del_r != '\0' ){
+-      (IGNORED) fprintf(cur_o_file, "%s%d %d",
+-         trace_dvi_del_R, (int) right, (int) up);
++      (IGNORED) fprintf(cur_o_file, "%s%.0f %.0f",
++         trace_dvi_del_R, (double) right, (double) up);
+    }
+    (IGNORED) fprintf(cur_o_file, "%s", end_trace_dvi_del_r);
+ }
+@@ -3913,18 +3932,20 @@
+ {                                         U_CHAR  *p;
+    p = m_alloc(char, (int) strlen((char *)  dir )            +
+                      (base? (int) strlen((char *)  base ):0) +
+-                     (int) strlen((char *)  HOME_DIR  )      + 1 );
++                     (HOME_DIR? (int) strlen((char *)  HOME_DIR  ) : 0)      + 1 );
+    *p = '\0';
+    if( (*(dir+1) == '~') && base ){
+      if( *base == '~' ){
+-       (IGNORED) strct(p, HOME_DIR);
++       if (HOME_DIR)
++            (IGNORED) strct(p, HOME_DIR);
+        (IGNORED) strct(p, base+1);
+      } else {
+        (IGNORED) strct(p, base);
+      }
+      (IGNORED) strct(p, dir+2);
+    } else {
+-     (IGNORED) strct(p, HOME_DIR);
++     if (HOME_DIR)
++            (IGNORED) strct(p, HOME_DIR);
+      (IGNORED) strct(p, dir+1);
+    }
+    return p;
+@@ -4658,7 +4679,7 @@
+ }  }
+ 
+  
+-if( pos_dvi ){       long int d;
++if( pos_dvi ){       long long d;
+   if( *pos_text ){
+     
+ if( no_root_file ){  open_o_file(); }
+@@ -6398,7 +6419,7 @@
+    if( HOME_DIR ){
+       (IGNORED) sprintf(str,
+ #if defined(DOS_WIN32) || defined(__DJGPP__)
+-  is_forward_slash(HOME_DIR)?  "%s/tex4ht.env" :  "%s\\tex4ht.env"
++  (HOME_DIR && !is_forward_slash(HOME_DIR))?  "%s\\tex4ht.env" : "%s/tex4ht.env"
+ #else
+   "%s/tex4ht.env"
+ #endif
+@@ -7235,6 +7256,9 @@
+                  (size_t) ((font_tbl_size+1)
+                            * sizeof(struct font_entry)))
+             : m_alloc(struct font_entry, 1);
++
++   memset(&new_font, 0, sizeof(struct font_entry));
++
+    if(       (version_id == 
+ 5
+ 
+@@ -7299,7 +7323,7 @@
+ 
+ 
+ {        int i;
+-   for( i=font_tbl_size-1; i>0;  i-- )
++   for( i=font_tbl_size-1; i >= 0;  i-- )
+      if( new_font.num == font_tbl[i].num )  warn_i(10);   }
+ 
+ 
+@@ -7483,7 +7507,7 @@
+ 
+ 
+ {        int i;
+-   for( i=font_tbl_size-1; i>0;  i-- )
++   for( i=font_tbl_size-1; i >= 0;  i-- )
+      if( new_font.num == font_tbl[i].num )  warn_i(10);   }
+ 
+ 
+@@ -7876,9 +7900,12 @@
+ 
+ 
+      flag = TRUE;
+-     for( ; font_name_n; font_name_n-- ){  FILE* file;
++     for( ; font_name_n >= 0; font_name_n-- ){  FILE* file;
+                                            int   char_f, char_l;
+        new_font_name[font_name_n] = '\0';
++       if (font_name_n == 0)
++            break;
++
+        
+ {                              U_CHAR name[256];
+    (IGNORED) sprintf(name, "%s.htf", new_font_name);
+@@ -8259,9 +8286,12 @@
+      int css_name_n = (int) strlen((char *)  new_font.name );
+      char * css_file_name = m_alloc(char, css_name_n + 1);
+      (IGNORED) strcpy((char *) css_file_name, (char *) new_font.name);
+-     for( ; css_name_n; css_name_n-- ){
++     for( ; css_name_n >= 0; css_name_n-- ){
+                                                FILE* file;
+        css_file_name[css_name_n] = '\0';
++       if (css_name_n == 0)
++            break;
++
+        
+ {                              U_CHAR name[256];
+    (IGNORED) sprintf(name, "%s.%s", css_file_name,
+@@ -8796,7 +8826,7 @@
+ * (double) font_tbl[cur_fnt].scale
+ 
+  );
+-if( needs_end_accent ){  needs_end_accent = x_val + 9 * width / 10; }
++if( needs_end_accent ){  needs_end_accent = (x_val + 9 * width / 10 != 0); }
+ in_accenting = FALSE;
+ 
+ 
+@@ -10795,7 +10825,7 @@
+              { 
+               struct send_back_entry *p, *q, *t=0;
+ if( back_id_off ){
+-   while( i-- ){ (IGNORED) get_char();  }
++   while( --i ){ (IGNORED) get_char();  } // there are left i - 1 chars
+ } else {
+    p =  m_alloc(struct send_back_entry,1);
+    p->send = get_str( (int)( i - 1 ));
+@@ -11931,10 +11961,10 @@
+ stack_depth = 0;
+ set_loc( 
+ 143 
+-, x_val );
++, (long int)x_val );
+ set_loc( 
+ 157 
+-, y_val );
++, (long int)y_val );
+ 
+   break; }
+      case '@': { 
+@@ -11972,10 +12002,10 @@
+ stack_depth = 0;
+ set_loc( 
+ 143 
+-, x_val );
++, (long int)x_val );
+ set_loc( 
+ 157 
+-, y_val );
++, (long int)y_val );
+ 
+   }
+ dvi_flag = TRUE;
+@@ -12010,9 +12040,9 @@
+    break; }
+ case 
+ 142 
+-: {      INTEGER cur_x, cur_y;
++: {      long long cur_x, cur_y;
+    stack_depth--;
+-   cur_x = (INTEGER) x_val;  cur_y = (INTEGER) y_val;  pop_stack();
++   cur_x = x_val;  cur_y = y_val;  pop_stack();
+    if( dvi_flag ){
+       if( stack_depth<0 ){ warn_i_int( 24,  page_n );
+                            
+@@ -12062,7 +12092,7 @@
+ case 
+ 243 
+ : {  idv_char( ch );             file_n++;
+-  for( i=14; i; i-- ){  ch = get_char(); idv_char( ch ); file_n++; }
++  for( i=14 + ch - 243; i; i-- ){  ch = get_char(); idv_char( ch ); file_n++; }
+   i = ch;  i += ch = get_char();  idv_char( ch );        file_n++;
+   while( i-- ){ idv_copy(); }
+   break;  }
