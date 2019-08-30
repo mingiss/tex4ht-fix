@@ -868,7 +868,7 @@ static struct font_entry*  font_tbl;
 static int font_tbl_size = 0;
 
 
-static char*  new_font_name;
+static char*  new_font_name = NULL;
 
 
 static U_CHAR *lg_font_fmt = NULL;
@@ -7823,7 +7823,7 @@ new_font.mag = new_font.scale / (new_font.design_sz / 100);
    }
    
 {      U_CHAR str[256];
-       int i, design_n, n_gif;
+       int i, design_n, n_gif = 256, n_str;
        
 int loopBound = 0;
 U_CHAR loopName[256];
@@ -8246,11 +8246,17 @@ if( dump_env_files ){ dump_env(); }
 }
 
 
+   n_str = design_n?design_n:n_gif;
    new_font.str = (unsigned U_CHAR **) r_alloc((void *)   new_font.str,
-                     (size_t) ( (design_n?design_n:1) * sizeof(char *)) );
+                     (size_t) (n_str * sizeof(char *)) );
+   new_font.str[0] = &null_str;
+   for (int ii = 1; ii < n_str; ii++)
+      new_font.str[ii] = NULL;
    
 for( i = fonts_n; i--; )
-  if( eq_str(html_font[i].name, new_font_name) ){       int k;
+  if (new_font_name && html_font[i].name &&
+        new_font_name[0] && html_font[i].name[0] && // not merging nameless fonts
+        eq_str(html_font[i].name, new_font_name) ){       int k;
      k = html_font[i].i;
      free((void *)  new_font.gif1 ); new_font.gif1= font_tbl[ k ].gif1;
      free((void *)  new_font.ch );   new_font.ch  = font_tbl[ k ].ch;
