@@ -1,6 +1,3 @@
-diff -r 09d75947f4a5 lit/tex4ht-c.tex
---- a/lit/tex4ht-c.tex	Tue Aug 29 13:45:07 2017 +0300
-+++ b/lit/tex4ht-c.tex	Thu Oct 19 18:26:20 2017 +0300
 @@ -1513,14 +1513,15 @@
  \<trace context\><<<
  {
@@ -285,6 +282,15 @@ diff -r 09d75947f4a5 lit/tex4ht-c.tex
     if(       (version_id == `<version xdv`>) 
           &&  (ch == `<xdv-native-font-def op`>) 
     ){
+@@ -8705,7 +8727,7 @@
+ 
+ 
+ \<vars\><<<
+-static char*  new_font_name;
++static char*  new_font_name = NULL;
+ >>>
+ 
+ 
 @@ -9295,7 +9317,7 @@
  
  \<first definition of font?\><<<
@@ -294,7 +300,25 @@ diff -r 09d75947f4a5 lit/tex4ht-c.tex
       if( new_font.num == font_tbl[i].num )  warn_i(10);   }
  >>>
  
-@@ -10054,9 +10076,12 @@
+@@ -9999,12 +10021,14 @@
+    `<initiate htf accents`>
+    new_font.ch = m_alloc(unsigned char, n_gif );
+    `<set default characters`>
+-   new_font.str =  m_alloc(unsigned char*, n_gif);  
++   new_font.str =  m_alloc(unsigned U_CHAR*, n_gif);  
+    new_font.str[0] = &null_str;
++   for (int ii = 1; ii < n_gif; ii++)
++      new_font.str[ii] = NULL;
+    design_n = 0;
+       `<load file of characters`>
+-   new_font.str = (unsigned U_CHAR **) r_alloc((void *)   new_font.str,
+-                     (size_t) ( (design_n?design_n:1) * sizeof(char *)) );
++// new_font.str = (unsigned U_CHAR **) r_alloc((void *)   new_font.str,
++//                     (size_t) ( (design_n?design_n:1) * sizeof(unsigned U_CHAR *)) );
+    `<merge new html font with old ones`>
+ }
+ >>>
+@@ -10054,9 +10078,12 @@
    while( 1 ){                         BOOL flag;
       `<font looping test`>
       flag = TRUE;
@@ -308,7 +332,52 @@ diff -r 09d75947f4a5 lit/tex4ht-c.tex
         `<file = .htf file`>
         if( file != NULL){
                                             INTEGER x_char_l;
-@@ -11878,9 +11903,12 @@
+@@ -10228,7 +10255,9 @@
+ 
+ \<merge new html font with old ones\><<<
+ for( i = fonts_n; i--; )
+-  if( eq_str(html_font[i].name, new_font_name) ){       int k;
++  if (new_font_name && html_font[i].name &&
++        new_font_name[0] && html_font[i].name[0] && // not merging nameless fonts
++        eq_str(html_font[i].name, new_font_name) ){       int k;
+      k = html_font[i].i;
+      free((void *)  new_font.gif1 ); new_font.gif1= font_tbl[ k ].gif1;
+      free((void *)  new_font.ch );   new_font.ch  = font_tbl[ k ].ch;
+@@ -10390,7 +10419,9 @@
+   case 1: { new_font.ch[i] = 0;    break; }
+   case 2: { new_font.ch[i] = *str; break; }  
+   default: {                           unsigned U_CHAR  *p;
+-    new_font.str[design_n] = p = m_alloc(unsigned char, j);
++    p = m_alloc(unsigned U_CHAR, j);
++    if (new_font.str && (design_n >= 0) && (design_n < n_gif))
++        new_font.str[design_n] = p;
+     if( design_n>255 ){ design_n--; warn_i(35);}
+     if( i==255 ){
+        if( design_n == 255 ){
+@@ -11361,8 +11392,12 @@
+ comamnds \`'<...>' and the delimiter characters \`'"'.
+ 
+ \<put htf char string\><<<
+-    unsigned U_CHAR * p;
+-p = font_tbl[cur_fnt].str[chr-1];
++    unsigned U_CHAR * p = NULL;
++if (font_tbl[cur_fnt].str && (chr > 0) &&
++    (chr <= font_tbl[cur_fnt].char_l - font_tbl[cur_fnt].char_f + 1))
++        p = font_tbl[cur_fnt].str[chr-1];
++if (p)
++{
+ if( gif_ch )  print_f( (char *) p );  `% /*new*/`%
+ else while( *p ){
+   switch( *p ){
+@@ -11372,6 +11407,7 @@
+    case '\'':  { p++;  break; }
+     default:   { put_char( (int) *p  ) ; p++; }
+ } }
++}
+ >>>
+ 
+ %     case '&':  { alt_ch_length = strlen((char *) p); }
+@@ -11878,9 +11914,12 @@
       int css_name_n = (int) strlen((char *)  new_font.name );
       char * css_file_name = m_alloc(char, css_name_n + 1);
       (IGNORED) strcpy((char *) css_file_name, (char *) new_font.name);
@@ -322,7 +391,7 @@ diff -r 09d75947f4a5 lit/tex4ht-c.tex
         `<file = .css file`>
       }
       free((void *) css_file_name); 
-@@ -12250,7 +12278,7 @@
+@@ -12250,7 +12289,7 @@
  {  `<accented = true`>  stack[stack_n-1].accented = TRUE; }
  needs_accent_sym = FALSE; 
  width = (INTEGER)( `<(double) char_width( ch )`> );
@@ -331,7 +400,7 @@ diff -r 09d75947f4a5 lit/tex4ht-c.tex
  in_accenting = FALSE;
  >>>
  
-@@ -13174,7 +13202,7 @@
+@@ -13174,7 +13213,7 @@
  
  \<"s/tex4ht.env"\><<<
  #if defined(__DJGPP__)
@@ -340,7 +409,7 @@ diff -r 09d75947f4a5 lit/tex4ht-c.tex
  #else
    "%s/tex4ht.env"
  #endif
-@@ -15389,18 +15417,20 @@
+@@ -15389,18 +15428,20 @@
  ;{                                         U_CHAR  *p;
     p = m_alloc(char, (int) strlen( dir )            +
                       (base? (int) strlen( base ):0) +
@@ -364,75 +433,3 @@ diff -r 09d75947f4a5 lit/tex4ht-c.tex
       (IGNORED) strct(p, dir+1);   
     }
     return p;
-
-@@ -10023,6 +10023,8 @@ Lynx introduces a space before and after each figure.
-    `<set default characters`>
--   new_font.str =  m_alloc(unsigned char*, n_gif);  
-+   new_font.str =  m_alloc(unsigned U_CHAR*, n_gif);  
-    new_font.str[0] = &null_str;
-+   for (int ii = 1; ii < n_gif; ii++)
-+      new_font.str[ii] = NULL;
-    design_n = 0;
-       `<load file of characters`>
--   new_font.str = (unsigned U_CHAR **) r_alloc((void *)   new_font.str,
--                       (size_t) ( (design_n?design_n:1) * sizeof(unsigned U_CHAR *)) );
-+// new_font.str = (unsigned U_CHAR **) r_alloc((void *)   new_font.str,
-+//                     (size_t) ( (design_n?design_n:1) * sizeof(unsigned U_CHAR *)) );
-    `<merge new html font with old ones`>
-
-@@ -8727,7 +8727,7 @@ new_font.design_sz = (INTEGER) get_unt(4);
- 
- 
- \<vars\><<<
--static char*  new_font_name;
-+static char*  new_font_name = NULL;
- >>>
- 
- 
-@@ -10255,7 +10259,9 @@ Don't we loose some vital info here? Were this comes from?
- 
- \<merge new html font with old ones\><<<
- for( i = fonts_n; i--; )
--  if( eq_str(html_font[i].name, new_font_name) ){       int k;
-+  if (new_font_name && html_font[i].name &&
-+        new_font_name[0] && html_font[i].name[0] && // not merging nameless fonts
-+        eq_str(html_font[i].name, new_font_name) ){       int k;
-      k = html_font[i].i;
-      free((void *)  new_font.gif1 ); new_font.gif1= font_tbl[ k ].gif1;
-      free((void *)  new_font.ch );   new_font.ch  = font_tbl[ k ].ch;
-
-@@ -10423,7 +10419,9 @@ switch( j ){
-   case 1: { new_font.ch[i] = 0;    break; }
-   case 2: { new_font.ch[i] = *str; break; }  
-   default: {                           unsigned U_CHAR  *p;
--    new_font.str[design_n] = p = m_alloc(unsigned char, j);
-+    p = m_alloc(unsigned U_CHAR, j);
-+    if (new_font.str && (design_n >= 0) && (design_n < n_gif))
-+        new_font.str[design_n] = p;
-     if( design_n>255 ){ design_n--; warn_i(35);}
-     if( i==255 ){
-        if( design_n == 255 ){
-
-@@ -11394,8 +11392,12 @@ Within that range, used in ALT's, we want to eliminate the html
- comamnds \`'<...>' and the delimiter characters \`'"'.
- 
- \<put htf char string\><<<
--    unsigned U_CHAR * p;
--p = font_tbl[cur_fnt].str[chr-1];
-+    unsigned U_CHAR * p = NULL;
-+if (font_tbl[cur_fnt].str && (chr > 0) &&
-+    (chr <= font_tbl[cur_fnt].char_l - font_tbl[cur_fnt].char_f + 1))
-+        p = font_tbl[cur_fnt].str[chr-1];
-+if (p)
-+{
- if( gif_ch )  print_f( (char *) p );  `% /*new*/`%
- else while( *p ){
-   switch( *p ){
-@@ -11405,6 +11407,7 @@ else while( *p ){
-    case '\'':  { p++;  break; }
-     default:   { put_char( (int) *p  ) ; p++; }
- } }
-+}
- >>>
- 
- %     case '&':  { alt_ch_length = strlen((char *) p); }

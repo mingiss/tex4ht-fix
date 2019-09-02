@@ -1,6 +1,3 @@
-diff -r 09d75947f4a5 src/tex4ht.c
---- a/src/tex4ht.c	Tue Aug 29 13:45:07 2017 +0300
-+++ b/src/tex4ht.c	Thu Oct 19 18:34:50 2017 +0300
 @@ -518,7 +518,7 @@
  
  
@@ -37,6 +34,15 @@ diff -r 09d75947f4a5 src/tex4ht.c
           max_pos_x, min_pos_y, max_pos_y;
  static short rect_pos;
  
+@@ -868,7 +868,7 @@
+ static int font_tbl_size = 0;
+ 
+ 
+-static char*  new_font_name;
++static char*  new_font_name = NULL;
+ 
+ 
+ static U_CHAR *lg_font_fmt = NULL;
 @@ -1599,7 +1599,7 @@
  
  
@@ -214,7 +220,30 @@ diff -r 09d75947f4a5 src/tex4ht.c
     }
     (IGNORED) fprintf(cur_o_file, "%s", end_trace_dvi_del_r);
  }
-@@ -3913,18 +3932,20 @@
+@@ -3198,8 +3217,12 @@
+ {
+    if( !ch_str_flag ) put_char( chr );
+    else if( chr > 0 ){ 
+-    unsigned U_CHAR * p;
+-p = font_tbl[cur_fnt].str[chr-1];
++    unsigned U_CHAR * p = NULL;
++if (font_tbl[cur_fnt].str && (chr > 0) &&
++    (chr <= font_tbl[cur_fnt].char_l - font_tbl[cur_fnt].char_f + 1))
++        p = font_tbl[cur_fnt].str[chr-1];
++if (p)
++{
+ if( gif_ch )  print_f( (char *) p );  
+ else while( *p ){
+   switch( *p ){
+@@ -3209,6 +3232,7 @@
+    case '\'':  { p++;  break; }
+     default:   { put_char( (int) *p  ) ; p++; }
+ } }
++}
+ 
+  }
+ }
+@@ -3913,18 +3937,20 @@
  {                                         U_CHAR  *p;
     p = m_alloc(char, (int) strlen((char *)  dir )            +
                       (base? (int) strlen((char *)  base ):0) +
@@ -238,7 +267,7 @@ diff -r 09d75947f4a5 src/tex4ht.c
       (IGNORED) strct(p, dir+1);
     }
     return p;
-@@ -4658,7 +4679,7 @@
+@@ -4658,7 +4684,7 @@
  }  }
  
   
@@ -247,7 +276,7 @@ diff -r 09d75947f4a5 src/tex4ht.c
    if( *pos_text ){
      
  if( no_root_file ){  open_o_file(); }
-@@ -6398,7 +6419,7 @@
+@@ -6398,7 +6424,7 @@
     if( HOME_DIR ){
        (IGNORED) sprintf(str,
  #if defined(DOS_WIN32) || defined(__DJGPP__)
@@ -256,7 +285,7 @@ diff -r 09d75947f4a5 src/tex4ht.c
  #else
    "%s/tex4ht.env"
  #endif
-@@ -7235,6 +7256,9 @@
+@@ -7235,6 +7261,9 @@
                   (size_t) ((font_tbl_size+1)
                             * sizeof(struct font_entry)))
              : m_alloc(struct font_entry, 1);
@@ -266,7 +295,7 @@ diff -r 09d75947f4a5 src/tex4ht.c
     if(       (version_id == 
  5
  
-@@ -7299,7 +7323,7 @@
+@@ -7299,7 +7328,7 @@
  
  
  {        int i;
@@ -275,7 +304,7 @@ diff -r 09d75947f4a5 src/tex4ht.c
       if( new_font.num == font_tbl[i].num )  warn_i(10);   }
  
  
-@@ -7483,7 +7507,7 @@
+@@ -7483,7 +7512,7 @@
  
  
  {        int i;
@@ -284,7 +313,16 @@ diff -r 09d75947f4a5 src/tex4ht.c
       if( new_font.num == font_tbl[i].num )  warn_i(10);   }
  
  
-@@ -7876,9 +7900,12 @@
+@@ -7854,6 +7883,8 @@
+ 
+    new_font.str =  m_alloc(unsigned char*, n_gif);
+    new_font.str[0] = &null_str;
++   for (int ii = 1; ii < n_gif; ii++)
++      new_font.str[ii] = NULL;
+    design_n = 0;
+       
+ {  char search_font_name [256];
+@@ -7876,9 +7907,12 @@
  
  
       flag = TRUE;
@@ -298,131 +336,7 @@ diff -r 09d75947f4a5 src/tex4ht.c
         
  {                              U_CHAR name[256];
     (IGNORED) sprintf(name, "%s.htf", new_font_name);
-@@ -8259,9 +8286,12 @@
-      int css_name_n = (int) strlen((char *)  new_font.name );
-      char * css_file_name = m_alloc(char, css_name_n + 1);
-      (IGNORED) strcpy((char *) css_file_name, (char *) new_font.name);
--     for( ; css_name_n; css_name_n-- ){
-+     for( ; css_name_n >= 0; css_name_n-- ){
-                                                FILE* file;
-        css_file_name[css_name_n] = '\0';
-+       if (css_name_n == 0)
-+            break;
-+
-        
- {                              U_CHAR name[256];
-    (IGNORED) sprintf(name, "%s.%s", css_file_name,
-@@ -8796,7 +8826,7 @@
- * (double) font_tbl[cur_fnt].scale
- 
-  );
--if( needs_end_accent ){  needs_end_accent = x_val + 9 * width / 10; }
-+if( needs_end_accent ){  needs_end_accent = (x_val + 9 * width / 10 != 0); }
- in_accenting = FALSE;
- 
- 
-@@ -10795,7 +10825,7 @@
-              { 
-               struct send_back_entry *p, *q, *t=0;
- if( back_id_off ){
--   while( i-- ){ (IGNORED) get_char();  }
-+   while( --i ){ (IGNORED) get_char();  } // there are left i - 1 chars
- } else {
-    p =  m_alloc(struct send_back_entry,1);
-    p->send = get_str( (int)( i - 1 ));
-@@ -11931,10 +11961,10 @@
- stack_depth = 0;
- set_loc( 
- 143 
--, x_val );
-+, (long int)x_val );
- set_loc( 
- 157 
--, y_val );
-+, (long int)y_val );
- 
-   break; }
-      case '@': { 
-@@ -11972,10 +12002,10 @@
- stack_depth = 0;
- set_loc( 
- 143 
--, x_val );
-+, (long int)x_val );
- set_loc( 
- 157 
--, y_val );
-+, (long int)y_val );
- 
-   }
- dvi_flag = TRUE;
-@@ -12010,9 +12040,9 @@
-    break; }
- case 
- 142 
--: {      INTEGER cur_x, cur_y;
-+: {      long long cur_x, cur_y;
-    stack_depth--;
--   cur_x = (INTEGER) x_val;  cur_y = (INTEGER) y_val;  pop_stack();
-+   cur_x = x_val;  cur_y = y_val;  pop_stack();
-    if( dvi_flag ){
-       if( stack_depth<0 ){ warn_i_int( 24,  page_n );
-                            
-@@ -12062,7 +12092,7 @@
- case 
- 243 
- : {  idv_char( ch );             file_n++;
--  for( i=14; i; i-- ){  ch = get_char(); idv_char( ch ); file_n++; }
-+  for( i=14 + ch - 243; i; i-- ){  ch = get_char(); idv_char( ch ); file_n++; }
-   i = ch;  i += ch = get_char();  idv_char( ch );        file_n++;
-   while( i-- ){ idv_copy(); }
-   break;  }
-
-@@ -7878,6 +7878,8 @@ for( i = new_font.char_f; i <= new_font.char_l ; i++ ){
- 
-    new_font.str =  m_alloc(unsigned char*, n_gif);
-    new_font.str[0] = &null_str;
-+   for (int ii = 1; ii < n_gif; ii++)
-+      new_font.str[ii] = NULL;
-    design_n = 0;
-       
- {  char search_font_name [256];
-
-@@ -868,7 +868,7 @@ static struct font_entry*  font_tbl;
- static int font_tbl_size = 0;
- 
- 
--static char*  new_font_name;
-+static char*  new_font_name = NULL;
- 
- 
- static U_CHAR *lg_font_fmt = NULL;
-
-@@ -3217,8 +3217,12 @@ static void  put_alt_ch
- {
-    if( !ch_str_flag ) put_char( chr );
-    else if( chr > 0 ){ 
--    unsigned U_CHAR * p;
--p = font_tbl[cur_fnt].str[chr-1];
-+    unsigned U_CHAR * p = NULL;
-+if (font_tbl[cur_fnt].str && (chr > 0) &&
-+    (chr <= font_tbl[cur_fnt].char_l - font_tbl[cur_fnt].char_f + 1))
-+        p = font_tbl[cur_fnt].str[chr-1];
-+if (p)
-+{
- if( gif_ch )  print_f( (char *) p );  
- else while( *p ){
-   switch( *p ){
-@@ -3228,6 +3232,7 @@ else while( *p ){
-    case '\'':  { p++;  break; }
-     default:   { put_char( (int) *p  ) ; p++; }
- } }
-+}
- 
-  }
- }
-
-@@ -8198,7 +8203,9 @@ switch( j ){
+@@ -8169,7 +8203,9 @@
    case 1: { new_font.ch[i] = 0;    break; }
    case 2: { new_font.ch[i] = *str; break; }
    default: {                           unsigned U_CHAR  *p;
@@ -433,12 +347,9 @@ diff -r 09d75947f4a5 src/tex4ht.c
      if( design_n>255 ){ design_n--; warn_i(35);}
      if( i==255 ){
         if( design_n == 255 ){
-
-
-
-
-@@ -8246,12 +8253,8 @@ if( dump_env_files ){ dump_env(); }
+@@ -8217,11 +8253,13 @@
  }
+ 
  
 -   new_font.str = (unsigned U_CHAR **) r_alloc((void *)   new_font.str,
 -                     (size_t) ( (design_n?design_n:1) * sizeof(char *)) );
@@ -453,3 +364,82 @@ diff -r 09d75947f4a5 src/tex4ht.c
       k = html_font[i].i;
       free((void *)  new_font.gif1 ); new_font.gif1= font_tbl[ k ].gif1;
       free((void *)  new_font.ch );   new_font.ch  = font_tbl[ k ].ch;
+@@ -8259,9 +8297,12 @@
+      int css_name_n = (int) strlen((char *)  new_font.name );
+      char * css_file_name = m_alloc(char, css_name_n + 1);
+      (IGNORED) strcpy((char *) css_file_name, (char *) new_font.name);
+-     for( ; css_name_n; css_name_n-- ){
++     for( ; css_name_n >= 0; css_name_n-- ){
+                                                FILE* file;
+        css_file_name[css_name_n] = '\0';
++       if (css_name_n == 0)
++            break;
++
+        
+ {                              U_CHAR name[256];
+    (IGNORED) sprintf(name, "%s.%s", css_file_name,
+@@ -8796,7 +8837,7 @@
+ * (double) font_tbl[cur_fnt].scale
+ 
+  );
+-if( needs_end_accent ){  needs_end_accent = x_val + 9 * width / 10; }
++if( needs_end_accent ){  needs_end_accent = (x_val + 9 * width / 10 != 0); }
+ in_accenting = FALSE;
+ 
+ 
+@@ -10795,7 +10836,7 @@
+              { 
+               struct send_back_entry *p, *q, *t=0;
+ if( back_id_off ){
+-   while( i-- ){ (IGNORED) get_char();  }
++   while( --i ){ (IGNORED) get_char();  } // there are left i - 1 chars
+ } else {
+    p =  m_alloc(struct send_back_entry,1);
+    p->send = get_str( (int)( i - 1 ));
+@@ -11931,10 +11972,10 @@
+ stack_depth = 0;
+ set_loc( 
+ 143 
+-, x_val );
++, (long int)x_val );
+ set_loc( 
+ 157 
+-, y_val );
++, (long int)y_val );
+ 
+   break; }
+      case '@': { 
+@@ -11972,10 +12013,10 @@
+ stack_depth = 0;
+ set_loc( 
+ 143 
+-, x_val );
++, (long int)x_val );
+ set_loc( 
+ 157 
+-, y_val );
++, (long int)y_val );
+ 
+   }
+ dvi_flag = TRUE;
+@@ -12010,9 +12051,9 @@
+    break; }
+ case 
+ 142 
+-: {      INTEGER cur_x, cur_y;
++: {      long long cur_x, cur_y;
+    stack_depth--;
+-   cur_x = (INTEGER) x_val;  cur_y = (INTEGER) y_val;  pop_stack();
++   cur_x = x_val;  cur_y = y_val;  pop_stack();
+    if( dvi_flag ){
+       if( stack_depth<0 ){ warn_i_int( 24,  page_n );
+                            
+@@ -12062,7 +12103,7 @@
+ case 
+ 243 
+ : {  idv_char( ch );             file_n++;
+-  for( i=14; i; i-- ){  ch = get_char(); idv_char( ch ); file_n++; }
++  for( i=14 + ch - 243; i; i-- ){  ch = get_char(); idv_char( ch ); file_n++; }
+   i = ch;  i += ch = get_char();  idv_char( ch );        file_n++;
+   while( i-- ){ idv_copy(); }
+   break;  }
