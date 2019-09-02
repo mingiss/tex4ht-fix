@@ -378,15 +378,6 @@ diff -r 09d75947f4a5 src/tex4ht.c
    while( i-- ){ idv_copy(); }
    break;  }
 
-@@ -3218,7 +3218,7 @@ static void  put_alt_ch
-    if( !ch_str_flag ) put_char( chr );
-    else if( chr > 0 ){ 
-     unsigned U_CHAR * p;
--p = font_tbl[cur_fnt].str[chr-1];
-+p = font_tbl[cur_fnt].str[chr - font_tbl[cur_fnt].char_f - 1];
- if( gif_ch )  print_f( (char *) p );  
- else while( *p ){
-   switch( *p ){
 @@ -7878,6 +7878,8 @@ for( i = new_font.char_f; i <= new_font.char_l ; i++ ){
  
     new_font.str =  m_alloc(unsigned char*, n_gif);
@@ -406,26 +397,53 @@ diff -r 09d75947f4a5 src/tex4ht.c
  
  
  static U_CHAR *lg_font_fmt = NULL;
-@@ -7823,7 +7823,7 @@ new_font.mag = new_font.scale / (new_font.design_sz / 100);
-    }
-    
- {      U_CHAR str[256];
--       int i, design_n, n_gif;
-+       int i, design_n, n_gif = 256, n_str;
-        
- int loopBound = 0;
- U_CHAR loopName[256];
-@@ -8246,11 +8246,17 @@ if( dump_env_files ){ dump_env(); }
+
+@@ -3217,8 +3217,12 @@ static void  put_alt_ch
+ {
+    if( !ch_str_flag ) put_char( chr );
+    else if( chr > 0 ){ 
+-    unsigned U_CHAR * p;
+-p = font_tbl[cur_fnt].str[chr-1];
++    unsigned U_CHAR * p = NULL;
++if (font_tbl[cur_fnt].str && (chr > 0) &&
++    (chr <= font_tbl[cur_fnt].char_l - font_tbl[cur_fnt].char_f + 1))
++        p = font_tbl[cur_fnt].str[chr-1];
++if (p)
++{
+ if( gif_ch )  print_f( (char *) p );  
+ else while( *p ){
+   switch( *p ){
+@@ -3228,6 +3232,7 @@ else while( *p ){
+    case '\'':  { p++;  break; }
+     default:   { put_char( (int) *p  ) ; p++; }
+ } }
++}
+ 
+  }
+ }
+
+@@ -8198,7 +8203,9 @@ switch( j ){
+   case 1: { new_font.ch[i] = 0;    break; }
+   case 2: { new_font.ch[i] = *str; break; }
+   default: {                           unsigned U_CHAR  *p;
+-    new_font.str[design_n] = p = m_alloc(unsigned char, j);
++    p = m_alloc(unsigned U_CHAR, j);
++    if (new_font.str && (design_n >= 0) && (design_n < n_gif))
++        new_font.str[design_n] = p;
+     if( design_n>255 ){ design_n--; warn_i(35);}
+     if( i==255 ){
+        if( design_n == 255 ){
+
+
+
+
+@@ -8246,12 +8253,8 @@ if( dump_env_files ){ dump_env(); }
  }
  
- 
-+   n_str = design_n?design_n:n_gif;
-    new_font.str = (unsigned U_CHAR **) r_alloc((void *)   new_font.str,
+-   new_font.str = (unsigned U_CHAR **) r_alloc((void *)   new_font.str,
 -                     (size_t) ( (design_n?design_n:1) * sizeof(char *)) );
-+                     (size_t) (n_str * sizeof(char *)) );
-+   new_font.str[0] = &null_str;
-+   for (int ii = 1; ii < n_str; ii++)
-+      new_font.str[ii] = NULL;
++// new_font.str = (unsigned U_CHAR **) r_alloc((void *)   new_font.str,
++//                     (size_t) ( (design_n?design_n:1) * sizeof(unsigned U_CHAR *)) );
     
  for( i = fonts_n; i--; )
 -  if( eq_str(html_font[i].name, new_font_name) ){       int k;
