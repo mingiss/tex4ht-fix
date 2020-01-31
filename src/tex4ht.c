@@ -1,5 +1,5 @@
 
-/* tex4ht.c (2020-01-30-17:42), generated from tex4ht-c.tex
+/* tex4ht.c (2020-01-31-15:40), generated from tex4ht-c.tex
    Copyright 2009-2016 TeX Users Group
    Copyright 1996-2009 Eitan M. Gurari
 
@@ -103,6 +103,28 @@
 #ifndef PATH_MAX
 #define PATH_MAX 256
 #endif
+#endif
+
+
+
+#ifdef _MSC_VER
+#define DOS_WIN32
+#define ANSI
+#endif
+
+
+
+#ifdef __MINGW32__
+#define DOS_WIN32
+#define ANSI
+#define HAVE_DIRENT_H
+#endif
+
+
+
+#ifdef linux
+#define ANSI
+#define HAVE_DIRENT_H
 #endif
 
 
@@ -6009,15 +6031,15 @@ SetConsoleCtrlHandler((PHANDLER_ROUTINE)sigint_handler, TRUE);
 (IGNORED) printf("----------------------------\n");
 #ifndef KPATHSEA
 #ifdef PLATFORM
-   (IGNORED) printf("tex4ht.c (2020-01-30-17:42 %s)\n",PLATFORM);
+   (IGNORED) printf("tex4ht.c (2020-01-31-15:40 %s)\n",PLATFORM);
 #else
-   (IGNORED) printf("tex4ht.c (2020-01-30-17:42)\n");
+   (IGNORED) printf("tex4ht.c (2020-01-31-15:40)\n");
 #endif
 #else
 #ifdef PLATFORM
-   (IGNORED) printf("tex4ht.c (2020-01-30-17:42 %s kpathsea)\n",PLATFORM);
+   (IGNORED) printf("tex4ht.c (2020-01-31-15:40 %s kpathsea)\n",PLATFORM);
 #else
-   (IGNORED) printf("tex4ht.c (2020-01-30-17:42 kpathsea)\n");
+   (IGNORED) printf("tex4ht.c (2020-01-31-15:40 kpathsea)\n");
 #endif
 #endif
 for(i=0; i<argc; i++){

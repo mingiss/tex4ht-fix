@@ -107,7 +107,8 @@
 
 \input ProTex.sty
 
-\ifHtml    \AlProTex{c,<<<>>>,`,title,list,ClearCode,_^,CodeLineNo}
+%\ifHtml    \AlProTex{c,<<<>>>,`,title,list,ClearCode,_^,CodeLineNo}
+\ifHtml    \AlProTex{c,<<<>>>,`,title,list,ClearCode,_^}
 
     \let\coDE=\<
     \def\<{\vfil\par\coDE}
@@ -269,6 +270,9 @@ the HTML/XML and \`'.css', also \`'.lg', \`'.idv', and
 `<define MSVC-1-52`>
 `<bordland: bcc32 -DBCC32 tex4ht`>
 `<bordland: bcc -DBCC -mh tex4ht`>
+`<msc`>
+`<mingw`>
+`<gcc`>
 `<DJGPP`>
 #ifdef DOS_C
 #define DOS
@@ -314,6 +318,27 @@ The \`'-mh' below calls for `Huge Memory Model'.
 #endif
 >>>
 
+\<msc\><<<
+#ifdef _MSC_VER
+#define DOS_WIN32
+#define ANSI
+#endif
+>>>
+
+\<mingw\><<<
+#ifdef __MINGW32__
+#define DOS_WIN32
+#define ANSI
+#define HAVE_DIRENT_H
+#endif
+>>>
+
+\<gcc\><<<
+#ifdef linux
+#define ANSI
+#define HAVE_DIRENT_H
+#endif
+>>>
 
 
 \ifHtml[\HPage{more}\Verbatim
