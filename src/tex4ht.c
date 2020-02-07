@@ -8859,6 +8859,7 @@ else if ( in_trace_char ){
 
    
 if( span_on && !in_span_ch  && !ignore_chs && !in_accenting
+            && (cur_fnt >= 0) && (cur_fnt < font_tbl_size)
             && (default_font != font_tbl[cur_fnt].num) ){
   if(  (ch < 137) && (ch != 
 132 

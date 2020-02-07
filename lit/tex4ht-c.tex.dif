@@ -21,7 +21,13 @@
 +  if (unkn_opt) { bad_arg; }
  }
  >>>
- 
+@@ -2612,6 +2612,7 @@
+ \<span char block\><<<
+ if( span_on && !in_span_ch  && !ignore_chs && !in_accenting
++            && (cur_fnt >= 0) && (cur_fnt < font_tbl_size)
+             && (default_font != font_tbl[cur_fnt].num) ){
+   if(  (ch < 137) && (ch != `<insert rule + move op`>) ){
+     in_span_ch = TRUE; start_span = TRUE;    
 @@ -2822,7 +2823,7 @@
  \<trace h spaces\><<<
  if( trace_dvi_H && !ch_map_flag ){

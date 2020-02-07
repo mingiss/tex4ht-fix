@@ -385,8 +385,12 @@
 -if( needs_end_accent ){  needs_end_accent = x_val + 9 * width / 10; }
 +if( needs_end_accent ){  needs_end_accent = (x_val + 9 * width / 10 != 0); }
  in_accenting = FALSE;
- 
- 
+@@ -8859,6 +8859,7 @@
+ if( span_on && !in_span_ch  && !ignore_chs && !in_accenting
++            && (cur_fnt >= 0) && (cur_fnt < font_tbl_size)
+             && (default_font != font_tbl[cur_fnt].num) ){
+   if(  (ch < 137) && (ch != 
+ 132 
 @@ -10795,7 +10836,7 @@
               { 
                struct send_back_entry *p, *q, *t=0;

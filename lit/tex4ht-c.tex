@@ -2612,6 +2612,7 @@ static BOOL start_span = FALSE, in_span_ch = FALSE;
 
 \<span char block\><<<
 if( span_on && !in_span_ch  && !ignore_chs && !in_accenting
+            && (cur_fnt >= 0) && (cur_fnt < font_tbl_size)
             && (default_font != font_tbl[cur_fnt].num) ){
   if(  (ch < 137) && (ch != `<insert rule + move op`>) ){
     in_span_ch = TRUE; start_span = TRUE;    
